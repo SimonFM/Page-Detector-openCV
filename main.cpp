@@ -1,6 +1,6 @@
 /*
- * Simon Markham - 12307233
- * 
+ * Simon Markham
+ *
  */
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
@@ -53,7 +53,7 @@ char * books[] = {"BookView01.jpg", "BookView02.jpg",
 				  "BookView47.jpg", "BookView48.jpg",
 				  "BookView49.jpg", "BookView50.jpg"};
 
-// Testing 
+// Testing
 void loadImages(char * fileLocation, char ** imageFiles, int size, cv::Mat * &images){
 	int number_of_images = sizeof(imageFiles)/sizeof(imageFiles[0]);
 
@@ -75,7 +75,7 @@ void loadImages(char * fileLocation, char ** imageFiles, int size, cv::Mat * &im
 }
 
 // Function to run program
-int main(int argc, const char** argv){	
+int main(int argc, const char** argv){
 	int bookSize = sizeof(books) / sizeof(books[0]);
 	int pageSize = sizeof(pages) / sizeof(pages[0]);
 	int i;
