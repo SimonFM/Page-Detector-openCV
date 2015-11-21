@@ -1,6 +1,6 @@
 /*
  * Simon Markham
- *
+ * 
  */
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
@@ -13,7 +13,7 @@
 #include "Utilities.h"
 #include "Histograms.cpp"
 
-#define NUM_OF_BINS	9
+#define NUM_OF_BINS	4 
 #define HALF_SIZE 2
 #define THIRD_SIZE 3
 
@@ -69,19 +69,19 @@ void getMask(Mat * images, int size, Mat * &result){
 	for(int i = 0 ; i < size ; i++){
 		split(images[i],rgb);
 		threshold(rgb[0],thresh, 0, 225,  CV_THRESH_BINARY | CV_THRESH_OTSU);
+		// perform an opening
 		erode(thresh,erodedImage,Mat());
-		dilate(erodedImage,dilatedImage,Mat());
-		bitwise_and(thresh,dilatedImage,mask);
-
+		dilate(erodedImage,mask,Mat());
+		// mask all the channels
 		for(int j = 0 ; j < 3 ; j++){
 			Mat temp_1;
-			bitwise_and(mask,rgb[i],temp_1 );
+			rgb[j].copyTo(temp_1,mask);
+			//bitwise_and(mask,rgb[j],temp_1 );
 			channels.push_back(temp_1);
 		}
+		// merge all the channels in to the result.
 		merge(channels,result[i]);
 		channels.clear();
-		imshow("result",result[i]);
-		waitKey(0);
 	}
 }
 
@@ -111,14 +111,13 @@ void resize(Mat * image,int size, int factor, Mat * result){
 
 
 // A function that displays an array of given images using the imshow function of opencv
-void displayImages(string windowName,int size,Mat * original,Mat * images, Mat * backProjected, Mat * kmeans){
+void displayImages(string windowName,int size,Mat * original,Mat * images, Mat * backProjected){
 	Mat * display = new Mat[size];
 	Mat temp;
 	for(int i = 0 ; i < size; i++){
 		cvtColor(backProjected[i],temp, CV_GRAY2BGR);
 		display[i] = JoinImagesHorizontally(original[i],"Original Image",images[i],"Result Image",4);
 		display[i] = JoinImagesHorizontally(display[i],"Original Image",temp,"Back Project Image",4);
-		display[i] = JoinImagesHorizontally(display[i],"Original Image",kmeans[i],"K Means",4);
 		imshow(windowName,display[i]);
 		waitKey(0);
 	}
@@ -146,13 +145,13 @@ void drawLines(Mat input,std::vector<Point> points, int size){
 	for(i = 0,j = i +1; i < size-1; j++,i++)
 		line( input,points[i],points[j],Scalar( 0, 0, 255 ),1,8 );
 	line( input,points[0],points[size-1],Scalar( 0, 0, 255),1,8 );
-
+	
 }
 
 // draws circles on an image for a given list of points.
 void drawCircles(Mat input,std::vector<Point> points, int size){
 	for(int i = 0; i < size; i++){
-		circle( input, points[i], 5, Scalar( 0, 0, 255 ),-1);
+		circle( input, points[i], 5, Scalar( 0, 0, 255 ),-1); 
 		//cout <<"Hello" << endl;
 	}
 }
@@ -163,7 +162,7 @@ std::vector<Point> getWhiteDotsLocations(Mat image ){
 	findNonZero(image,nonZero);
 	std::vector<Point> result(nonZero.total());
 	for (int i = 0; i < nonZero.total(); i++) result[i] = nonZero.at<Point>(i);
-
+	
 	return result;
 }
 
@@ -179,7 +178,7 @@ void backProjectionAndThreshold(Mat * imagesToProcesse, int size, Mat * &result)
 	for(int i = 0; i < size; i++){
 		cvtColor(imagesToProcesse[i], hls_image, CV_BGR2HLS);
 		backProjProb = StretchImage( histogram3D.BackProject(hls_image) );
-		threshold(backProjProb, result[i], 0, 225,  CV_THRESH_BINARY | CV_THRESH_OTSU);
+		threshold(backProjProb, result[i], 15, 225,  CV_THRESH_BINARY | CV_THRESH_OTSU);
 	}
 }
 
@@ -274,15 +273,32 @@ Point getTopLeftPoint(std::vector<Point> points){
 	return topRight;
 }
 
-//draws the circles and lines on an image
-void drawLocationOfPage(Mat * backProjectionImages, Mat * images, int size,
-							std::vector<Point> whiteDots, std::vector<Point> corners){
+// Gets the area of a page, given 4 co ordinates
+int areaOfPage(int x1, int y1, int x2,  int y2, int x3,  int y3, int x4,  int y4 ){
+	int area = (x1*y2 - x2*y1) + (x2*y3 - x3*y2) + (x3*y4 - x4*y3) + (x4*y1 - x1*y4);
+	std::cout <<"Area: "<<area <<std::endl;
+	return area / 2;
+}
+
+// returns the angle between point a and b
+float angleBetweenTwoPoints(Point a, Point b){
+	float angle = atan2(a.y - b.y, a.x - b.x);
+	std::cout <<"Angle: "<<angle <<std::endl;
+	return angle;
+}
+//draws the circles and lines on an image 
+void drawLocationOfPage(Mat * backProjectionImages, Mat * images, int size,	std::vector<Point> whiteDots, std::vector<Point> corners){
 	for(int i = 0; i < size; i++){
 		whiteDots = getWhiteDotsLocations(backProjectionImages[i]);
 		corners.push_back( getBottomLeftPoint(whiteDots));
 		corners.push_back( getBottomRightPoint(whiteDots));
-		corners.push_back( getTopRightPoint(whiteDots));
+    	corners.push_back( getTopRightPoint(whiteDots));
 		corners.push_back( getTopLeftPoint(whiteDots));
+		/*areaOfPage(corners[0].x,corners[0].y,corners[1].x,corners[1].y,
+					corners[2].x,corners[2].y,corners[3].x,corners[3].y);*/
+		//angleBetweenTwoPoints(corners[0],corners[3]);
+	//	angleBetweenTwoPoints(corners[1],corners[2]);
+
 		drawCircles(images[i],corners,corners.size());
 		drawLines(images[i],corners,corners.size());
 		corners.clear();
@@ -290,7 +306,7 @@ void drawLocationOfPage(Mat * backProjectionImages, Mat * images, int size,
 }
 
 // Function to run program
-int main(int argc, const char** argv){
+int main(int argc, const char** argv){	
 	int bookSize = sizeof(books) / sizeof(books[0]);
 	int pageSize = sizeof(pages) / sizeof(pages[0]);
 	Mat * booksMat = new Mat[bookSize];
@@ -300,12 +316,7 @@ int main(int argc, const char** argv){
 	Mat * originalResizedBooks = new Mat[bookSize];
 	Mat * resizedPages = new Mat[pageSize];
 
-	Mat * greyScaledBookImages = new Mat[bookSize];
 	Mat * backProjectionImages = new Mat[bookSize];
-	Mat * redChannels = new Mat[bookSize];
-	Mat * kMeans = new Mat[bookSize];
-	Mat * nonZeroes = new Mat[bookSize];
-
 	Mat * mask = new Mat[bookSize];
 
 	std::vector<Point> whiteDotsLocation;
@@ -315,36 +326,15 @@ int main(int argc, const char** argv){
 	loadImages(bookLoc, books, bookSize, booksMat);
 	loadImages(pageLoc, pages, pageSize, pagesMat);
 	// resize to improve speed
-	resize(booksMat,bookSize, THIRD_SIZE, resizedBooks);
-	resize(booksMat,bookSize, THIRD_SIZE, originalResizedBooks);
+	resize(booksMat,bookSize, THIRD_SIZE, resizedBooks); 
+	resize(booksMat,bookSize, THIRD_SIZE, originalResizedBooks); 
 	getMask(resizedBooks,bookSize,mask);
-	//greyScaleArray(booksMat,1, greyScaledBookImages);
-	//getRedChannels(booksMat, bookSize, redChannels);
-	//gaussianBlurImage(booksMat,bookSize,greyScaledBookImages);
-	//kMeansImage(resizedBooks,bookSize,kMeans);
-	//applyOtsuThresholding(resizedBooks,1,nonZeroes);
-	backProjectionAndThreshold(resizedBooks,bookSize,backProjectionImages);
-	drawLocationOfPage(backProjectionImages, resizedBooks ,bookSize, whiteDotsLocation, corners);
 
-	// Create black empty images
-	// Mat image = Mat::zeros( 400, 400, CV_8UC3 );
-
-	// Draw a circle
-	//circle( backProjectionImages[0], Point( 200, 200 ), 32.0, Scalar( 0, 0, 255 ), 1, 8 );
-	//imshow("Image",resizedBooks[0]);
-	 //waitKey(0);
-
-	//cout << whiteDotsLocation << endl;
-	// Displaying of images
-	//displayImages("Red Channels",bookSize,redChannels);
-	//displayImages("Non Zeroes",bookSize,nonZeroes);
-	//displayImages("K Means",bookSize,kMeans);
-	//displayImages("Back Projection And Thresholded",size,resizedBooks,backProjectionImages);
-
-	displayImages("Found Corners",bookSize,originalResizedBooks,resizedBooks,backProjectionImages,kMeans);
-	//displayImages("Original BookView",bookSize,booksMat);
-	//displayImages("Original PageView",pageSize,pagesMat);
-	//displayImages("Original BookView",bookSize,greyScaledBookImages);
-	//displayImages("Grey Scaled Book",bookSize,greyScaledBookImages);
+	// backproject and threshold, then draw circles where the corners are
+	backProjectionAndThreshold(mask,bookSize,backProjectionImages);
+	drawLocationOfPage(backProjectionImages, mask ,bookSize, whiteDotsLocation, corners);
+	
+	displayImages("Found Corners",bookSize,originalResizedBooks,mask,backProjectionImages);
+	//displayImages("Found Corners",bookSize,originalResizedBooks,mask,backProjectionImages);
     return 0;
 }
