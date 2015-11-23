@@ -14,10 +14,10 @@
 #include <fstream>
 #include "Utilities.h"
 #include "Histograms.cpp"
-#pragma endregion INCLUDES
 
 using namespace std;
 using namespace cv;
+#pragma endregion INCLUDES
 
 #pragma region DEFINES
 
@@ -27,7 +27,6 @@ using namespace cv;
 #define THIRD_SIZE 3
 
 #pragma endregion DEFINES
-
 
 #pragma region IMAGE LOCATIONS
 // Location of the images in the project
@@ -119,22 +118,25 @@ void drawCircles(Mat input,std::vector<Point> points, int size){
 }
 
 // A function that displays an array of given images using the imshow function of opencv
-void displayImages(string windowName,int size,Mat * original,Mat * images, Mat * backProjected){
+void displayImages(string windowName,int size,Mat * original,Mat * images, Mat * backProjected, Mat * cropped){
 	Mat * display = new Mat[size];
+
 	Mat * display1 = new Mat[size];
 	Mat * display2 = new Mat[size];
 	Mat * display3 = new Mat[size];
-
+	Mat * display4 = new Mat[size];
 
 	Mat temp;
 	resize(original,size, THIRD_SIZE, display1); 
 	resize(images,size, THIRD_SIZE, display2); 
-	resize(backProjected,size, THIRD_SIZE, display3); 
+	resize(backProjected,size, THIRD_SIZE, display3);
+	resize(cropped,size, HALF_SIZE, display4);
 
 	for(int i = 0 ; i < size; i++){
 		cvtColor(display3[i],temp, CV_GRAY2BGR);
 		display[i] = JoinImagesHorizontally(display1[i],"Original Image",display2[i],"Result Image",4);
 		display[i] = JoinImagesHorizontally(display[i],"Original Image",temp,"Back Project Image",4);
+		display[i] = JoinImagesHorizontally(display[i],"Original Image",display4[i],"Cropped Image",4);
 		imshow(windowName,display[i]);
 		waitKey(0);
 	}
@@ -353,29 +355,27 @@ void drawLocationOfPage(Mat * backProjectionImages, Mat * images, int size,	std:
 }
 
 // crops an image given a set of points and stored the cropped image in result.
-void cropImage(Mat image, int x ,int y, int xWidth, int yWidth, Mat result){
-	result = image(Rect(x ,y ,xWidth ,yWidth));
+Mat cropImage(Mat image, int x ,int y, int xWidth, int yWidth){
+	return image(Rect(x ,y ,xWidth ,yWidth));
 }
 
 //
-double distance(Point p1, Point p2){
-	return (int) sqrt( ((p2.x - p1.x) * (p2.x - p1.x)) + ((p2.y - p1.y) * (p2.y - p1.y)));
+double distanceBetween(Point p1, Point p2){
+	return sqrt( ((p2.x - p1.x) * (p2.x - p1.x)) + ((p2.y - p1.y) * (p2.y - p1.y)));
 }
 
 //
-void cropImageSet(Mat * image,int size, std::vector<Point> * points, Mat * result){
+void cropImageSet(Mat * imageToCrop,int size, std::vector<Point>  points, Mat * &result){
 	int xWidth, yWidth;
-	for(int i = 0; i < size; i++){
+	for(int i = 0; i < 1; i++){
+		xWidth = (int) distanceBetween(points[2],points[0]);
 
-		//xWidth = distance(points[i][0],points[i][2]);
-		//xWidth += (distance(points[i][3],points[i][1])) / 2;
-
-		//yWidth = distance(points[i][0],points[i][3]);
-		//yWidth += (distance(points[i][2],points[i][1])) / 2;
-
-		//cropImage(image[i], points[i][0].x , points[i][0].y, xWidth, yWidth, result[i]);
-		imshow("cropped",result[i]);
-		waitKey(0);
+		yWidth = (int) distanceBetween(points[0],points[1]);
+		std::cout <<xWidth <<std::endl;
+		std::cout <<yWidth <<std::endl;
+		std::cout <<points[3] <<std::endl;
+		
+		result[i] =cropImage(imageToCrop[i],points[3].x , points[3].y,yWidth , xWidth);
 	}
 		
 }
@@ -386,26 +386,30 @@ void cropImageSet(Mat * image,int size, std::vector<Point> * points, Mat * resul
 // I based my answer off the sample code.
 #pragma region GEOMETRIC TRANSFORMATION
 
-void transform(Mat imageToTransform, std::vector<Point> srcPoints, std::vector<Point> dstPoints, Mat result){
-	Point2f source_points[4], destination_points[4];
-	
-	source_points[0] = Point2f( srcPoints[0].x, srcPoints[0].y ); // top left
-	source_points[1] = Point2f( srcPoints[1].x, srcPoints[1].y ); // top right
-	source_points[2] = Point2f( srcPoints[2].x, srcPoints[2].y ); // bottom left
-	source_points[3] = Point2f( srcPoints[3].x, srcPoints[3].y ); // bottom right
+void transformImage(Mat imageToTransform, std::vector<Point> srcPoints, std::vector<Point> dstPoints, Mat &result){
+	Point2f src[4], dst[4];
 
-	destination_points[2] = Point2f( dstPoints[0].x, dstPoints[0].x );
-	destination_points[1] = Point2f( dstPoints[1].x, dstPoints[1].x );
-	destination_points[0] = Point2f( dstPoints[2].x, dstPoints[2].x );
-	destination_points[3] = Point2f( dstPoints[3].x, dstPoints[3].x );
+	src[0] = Point2f( srcPoints[0].x, srcPoints[0].y ); // top left
+	src[1] = Point2f( srcPoints[1].x, srcPoints[1].y ); // top right
+	src[2] = Point2f( srcPoints[2].x, srcPoints[2].y ); // bottom left
+	src[3] = Point2f( srcPoints[3].x, srcPoints[3].y ); // bottom right
+
+	dst[0] = Point2f( dstPoints[3].x, dstPoints[3].y ); // top left
+	dst[1] = Point2f( dstPoints[2].x, dstPoints[2].y ); // top right
+	dst[2] = Point2f( dstPoints[1].x, dstPoints[1].y ); // bottom left
+	dst[3] = Point2f( dstPoints[0].x, dstPoints[0].y ); // bottom right
 
 	Mat perspective_matrix( 3, 3, CV_32FC1 );
-	perspective_matrix = getPerspectiveTransform( source_points, destination_points );
-
+	perspective_matrix = getPerspectiveTransform( src, dst );
 	warpPerspective( imageToTransform, result, perspective_matrix, result.size() );
-	imshow("",imageToTransform);
-	imshow("",result);
-	waitKey(0);
+}
+
+void transformSetOfImages(Mat * imagesToTransform, std::vector<Point>* srcPoints, std::vector<Point> dstPoints,
+																					int size, Mat * &result){
+	for(int i = 0; i < 1; i++){
+		transformImage(imagesToTransform[i], srcPoints[i],dstPoints,result[i]);
+	}
+	
 }
 
 std::vector<Point> getTemplatePoints(std::vector<Point> pointsInImages){
@@ -440,6 +444,59 @@ std::vector<Point> getTemplateCorners(Mat * templateImages, int size){
 }
 #pragma endregion GEOMETRIC TRANSFORMATION
 
+
+#pragma region TEMPLATE MATCHING
+
+// taken from the sample code
+void FindLocalMaxima( Mat& input_image, Mat& local_maxima, double threshold_value )
+{
+	Mat dilated_input_image,thresholded_input_image,thresholded_input_8bit;
+	dilate(input_image,dilated_input_image,Mat());
+	compare(input_image,dilated_input_image,local_maxima,CMP_EQ);
+	threshold( input_image, thresholded_input_image, threshold_value, 255, THRESH_BINARY );
+	thresholded_input_image.convertTo( thresholded_input_8bit, CV_8U );
+	bitwise_and( local_maxima, thresholded_input_8bit, local_maxima );
+}
+
+// taken from the sample code
+void FindLocalMinima( Mat& input_image, Mat& local_minima, double threshold_value )
+{
+	Mat eroded_input_image,thresholded_input_image,thresholded_input_8bit;
+	erode(input_image,eroded_input_image,Mat());
+	compare(input_image,eroded_input_image,local_minima,CMP_EQ);
+	threshold( input_image, thresholded_input_image, threshold_value, 255, THRESH_BINARY_INV );
+	thresholded_input_image.convertTo( thresholded_input_8bit, CV_8U );
+	bitwise_and( local_minima, thresholded_input_8bit, local_minima );
+}
+
+// taken from the sample code
+void templateMatch(Mat * imagesToTemplateMatch, int sizeBook,int sizePage, Mat * templates){
+
+	Mat display_image, correlation_image;
+	imagesToTemplateMatch[0].copyTo( display_image );
+	double min_correlation, max_correlation;
+	Mat matched_template_map;
+	int result_columns =  imagesToTemplateMatch[0].cols - templates[0].cols + 1;
+	int result_rows = imagesToTemplateMatch[0].rows - templates[0].rows + 1;
+	correlation_image.create( result_columns, result_rows, CV_32FC1 );
+
+	imshow("imagesToTemplateMatch",imagesToTemplateMatch[0]);
+	imshow("templates",templates[0]);
+	imshow("corr",correlation_image);
+	waitKey(0);
+	matchTemplate( imagesToTemplateMatch[0], templates[0], correlation_image, CV_TM_CCORR_NORMED );
+	minMaxLoc( correlation_image, &min_correlation, &max_correlation );
+	FindLocalMaxima( correlation_image, matched_template_map, max_correlation * 0.99 );
+	/*for(int i = 0; i < sizeBook; i++){
+		Mat result;
+		for(int j = 0; j < sizeBook; j++){
+			matchTemplate(imagesToTemplateMatch[i],templates[j],result,CV_TM_CCORR_NORMED);
+			imshow("result",result);
+			waitKey(0);
+		}
+	}*/
+}
+#pragma endregion TEMPLATE MATCHING
 // Function to run program
 int main(int argc, const char** argv){	
 	int bookSize = sizeof(books) / sizeof(books[0]);
@@ -449,10 +506,9 @@ int main(int argc, const char** argv){
 	Mat * backProjectionImages = new Mat[bookSize];
 	Mat * mask = new Mat[bookSize];
 	Mat * croppedImages = new Mat[bookSize];
-	Mat * transformation = new Mat[bookSize];
+	Mat * transformedImages = new Mat[bookSize];
 
 	Mat * resizedPages = new Mat[pageSize];
-	Mat * templatePages = new Mat[pageSize];
 	Mat * pagesMat = new Mat[pageSize];
 
 	std::vector<Point> * whiteDotsLocation = new std::vector<Point>[bookSize];
@@ -461,19 +517,16 @@ int main(int argc, const char** argv){
 	sampleBluePixel = cv::imread(sampleBlue, -1);
 	loadImages(bookLoc, books, bookSize, booksMat);
 	loadImages(pageLoc, pages, pageSize, pagesMat);
-	templateCorners = getTemplateCorners(pagesMat, pageSize);
-	// resize to improve speed
-	getMask(booksMat,bookSize,mask);
 
+	templateCorners = getTemplateCorners(pagesMat, pageSize);
+	getMask(booksMat,bookSize,mask);
 	// backproject and threshold, then draw circles where the corners are
 	backProjectionAndThreshold(mask,bookSize,backProjectionImages);
 	drawLocationOfPage(backProjectionImages, mask ,bookSize, whiteDotsLocation);
-	
-	transform(mask[0], whiteDotsLocation[0],templateCorners,transformation[0]);
+	transformSetOfImages(booksMat, whiteDotsLocation, templateCorners,bookSize, transformedImages);
 
-	//cropImageSet(originalResizedBooks,bookSize,whiteDotsLocation,croppedImages);
-
-	displayImages("Found Corners",bookSize,booksMat,mask,backProjectionImages);
-	//displayImages("Found Corners",bookSize,originalResizedBooks,mask,backProjectionImages);
+    cropImageSet(transformedImages,bookSize,templateCorners,croppedImages);
+	templateMatch(transformedImages, bookSize, pageSize,pagesMat);
+	displayImages("Found Corners",1,booksMat,mask,backProjectionImages, croppedImages);
     return 0;
 }
