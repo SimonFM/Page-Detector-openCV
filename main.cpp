@@ -1,6 +1,6 @@
 /*
  * Simon Markham
- * 
+ *
  */
 #pragma region INCLUDES
 
@@ -21,7 +21,7 @@ using namespace cv;
 
 #pragma region DEFINES
 
-#define NUM_OF_BINS	4 
+#define NUM_OF_BINS	4
 #define NUM_OF_CORNERS	4
 #define HALF_SIZE 2
 #define THIRD_SIZE 3
@@ -111,10 +111,10 @@ void drawLines(Mat input,std::vector<Point> points){
 
 // draws circles on an image for a given list of points.
 void drawCircles(Mat input,std::vector<Point> points, int size){
-	circle( input, points[0], 5, Scalar( 0, 0, 0),-1); 
-	circle( input, points[1], 5, Scalar( 0, 255, 0 ),-1); 
-	circle( input, points[2], 5, Scalar( 0, 0, 255 ),-1); 
-	circle( input, points[3], 5, Scalar( 255, 0, 0 ),-1); 
+	circle( input, points[0], 5, Scalar( 0, 0, 0),-1);
+	circle( input, points[1], 5, Scalar( 0, 255, 0 ),-1);
+	circle( input, points[2], 5, Scalar( 0, 0, 255 ),-1);
+	circle( input, points[3], 5, Scalar( 255, 0, 0 ),-1);
 }
 
 // A function that displays an array of given images using the imshow function of opencv
@@ -127,8 +127,8 @@ void displayImages(string windowName,int size,Mat * original,Mat * images, Mat *
 	Mat * display4 = new Mat[size];
 
 	Mat temp;
-	resize(original,size, THIRD_SIZE, display1); 
-	resize(images,size, THIRD_SIZE, display2); 
+	resize(original,size, THIRD_SIZE, display1);
+	resize(images,size, THIRD_SIZE, display2);
 	resize(backProjected,size, THIRD_SIZE, display3);
 	resize(cropped,size, HALF_SIZE, display4);
 
@@ -147,10 +147,10 @@ void displayImages(string windowName,int size,Mat * original,Mat * images, Mat *
 // backProjectionAndThreshold
 // applyOtsuThresholding
 // gaussianBlurImage
-// kmeans_clustering 
+// kmeans_clustering
 // getMask
 // getRedChannels
-// Alot of the code in here was based off the code given to us in the 
+// Alot of the code in here was based off the code given to us in the
 // OpenCVSample on Blackboard
 #pragma region OPERATIONS
 
@@ -270,7 +270,7 @@ std::vector<Point> getWhiteDotsLocations(Mat image ){
 	findNonZero(image,nonZero);
 	std::vector<Point> result(nonZero.total());
 	for (int i = 0; i < nonZero.total(); i++) result[i] = nonZero.at<Point>(i);
-	
+
 	return result;
 }
 
@@ -336,9 +336,9 @@ double angleBetweenTwoPoints(Point a, Point b){
 
 // Contains functions for cropping the images and getting the points
 #pragma region CROPPING
-//draws the circles and lines on an image 
+//draws the circles and lines on an image
 void drawLocationOfPage(Mat * backProjectionImages, Mat * images, int size,	std::vector<Point> *  whiteDots){
-	std::vector<Point> temp;	
+	std::vector<Point> temp;
 	Point * p = new Point[NUM_OF_CORNERS];
 	for(int i = 0; i < size; i++){
 		temp = getWhiteDotsLocations(backProjectionImages[i]);
@@ -374,10 +374,10 @@ void cropImageSet(Mat * imageToCrop,int size, std::vector<Point>  points, Mat * 
 		std::cout <<xWidth <<std::endl;
 		std::cout <<yWidth <<std::endl;
 		std::cout <<points[3] <<std::endl;
-		
+
 		result[i] =cropImage(imageToCrop[i],points[3].x , points[3].y,yWidth , xWidth);
 	}
-		
+
 }
 
 #pragma endregion CROPPING
@@ -409,7 +409,7 @@ void transformSetOfImages(Mat * imagesToTransform, std::vector<Point>* srcPoints
 	for(int i = 0; i < 1; i++){
 		transformImage(imagesToTransform[i], srcPoints[i],dstPoints,result[i]);
 	}
-	
+
 }
 
 std::vector<Point> getTemplatePoints(std::vector<Point> pointsInImages){
@@ -470,35 +470,26 @@ void FindLocalMinima( Mat& input_image, Mat& local_minima, double threshold_valu
 }
 
 // taken from the sample code
-void templateMatch(Mat * imagesToTemplateMatch, int sizeBook,int sizePage, Mat * templates){
-
-	Mat display_image, correlation_image;
-	imagesToTemplateMatch[0].copyTo( display_image );
+void templateMatch(Mat full_image, Mat * templates){
+	Mat display_image, correlation_image, temp;
+	full_image.copyTo( display_image );
 	double min_correlation, max_correlation;
-	Mat matched_template_map;
-	int result_columns =  imagesToTemplateMatch[0].cols - templates[0].cols + 1;
-	int result_rows = imagesToTemplateMatch[0].rows - templates[0].rows + 1;
+	int result_columns =  full_image.cols - templates[0].cols + 1;
+	int result_rows = full_image.rows - templates[0].rows + 1;
 	correlation_image.create( result_columns, result_rows, CV_32FC1 );
-
-	imshow("imagesToTemplateMatch",imagesToTemplateMatch[0]);
-	imshow("templates",templates[0]);
-	imshow("corr",correlation_image);
+	cvtColor(full_image,display_image,CV_RGB2GRAY);
+	cvtColor(templates[0],temp,CV_RGB2GRAY);
+	imshow("image",display_image);
+	imshow("temp",temp);
 	waitKey(0);
-	matchTemplate( imagesToTemplateMatch[0], templates[0], correlation_image, CV_TM_CCORR_NORMED );
-	minMaxLoc( correlation_image, &min_correlation, &max_correlation );
-	FindLocalMaxima( correlation_image, matched_template_map, max_correlation * 0.99 );
-	/*for(int i = 0; i < sizeBook; i++){
-		Mat result;
-		for(int j = 0; j < sizeBook; j++){
-			matchTemplate(imagesToTemplateMatch[i],templates[j],result,CV_TM_CCORR_NORMED);
-			imshow("result",result);
-			waitKey(0);
-		}
-	}*/
+	matchTemplate( display_image, temp, correlation_image, CV_TM_SQDIFF_NORMED );
+	//minMaxLoc( correlation_image, &min_correlation, &max_correlation );
+	//FindLocalMaxima( correlation_image, matched_template_map, max_correlation * 0.99 );
+
 }
 #pragma endregion TEMPLATE MATCHING
 // Function to run program
-int main(int argc, const char** argv){	
+int main(int argc, const char** argv){
 	int bookSize = sizeof(books) / sizeof(books[0]);
 	int pageSize = sizeof(pages) / sizeof(pages[0]);
 
@@ -524,9 +515,10 @@ int main(int argc, const char** argv){
 	backProjectionAndThreshold(mask,bookSize,backProjectionImages);
 	drawLocationOfPage(backProjectionImages, mask ,bookSize, whiteDotsLocation);
 	transformSetOfImages(booksMat, whiteDotsLocation, templateCorners,bookSize, transformedImages);
-
+	Mat test;
+	transformedImages[0].copyTo(test);
     cropImageSet(transformedImages,bookSize,templateCorners,croppedImages);
-	templateMatch(transformedImages, bookSize, pageSize,pagesMat);
+	templateMatch(test,pagesMat);
 	displayImages("Found Corners",1,booksMat,mask,backProjectionImages, croppedImages);
     return 0;
 }
