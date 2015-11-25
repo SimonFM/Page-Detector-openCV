@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
+#include <tuple>
 #include "Utilities.h"
 #include "Histograms.cpp"
 
@@ -19,6 +20,7 @@ using namespace std;
 using namespace cv;
 #pragma endregion INCLUDES
 
+int image = 0;
 #pragma region DEFINES
 
 #define NUM_OF_BINS	4
@@ -367,17 +369,15 @@ double distanceBetween(Point p1, Point p2){
 //
 void cropImageSet(Mat * imageToCrop,int size, std::vector<Point>  points, Mat * &result){
 	int xWidth, yWidth;
-	for(int i = 0; i < 1; i++){
+	for(int i = 0; i < size; i++){
+		/*imshow("i",imageToCrop[i]);
+		waitKey(0);*/
 		xWidth = (int) distanceBetween(points[2],points[0]);
 
 		yWidth = (int) distanceBetween(points[0],points[1]);
-		std::cout <<xWidth <<std::endl;
-		std::cout <<yWidth <<std::endl;
-		std::cout <<points[3] <<std::endl;
 
 		result[i] =cropImage(imageToCrop[i],points[3].x , points[3].y,yWidth , xWidth);
 	}
-
 }
 
 #pragma endregion CROPPING
@@ -404,9 +404,8 @@ void transformImage(Mat imageToTransform, std::vector<Point> srcPoints, std::vec
 	warpPerspective( imageToTransform, result, perspective_matrix, result.size() );
 }
 
-void transformSetOfImages(Mat * imagesToTransform, std::vector<Point>* srcPoints, std::vector<Point> dstPoints,
-																					int size, Mat * &result){
-	for(int i = 0; i < 1; i++){
+void transformSetOfImages(Mat * imagesToTransform, std::vector<Point>* srcPoints, std::vector<Point> dstPoints,int size, Mat * &result){
+	for(int i = 0; i < size; i++){
 		transformImage(imagesToTransform[i], srcPoints[i],dstPoints,result[i]);
 	}
 
@@ -470,21 +469,46 @@ void FindLocalMinima( Mat& input_image, Mat& local_minima, double threshold_valu
 }
 
 // taken from the sample code
-void templateMatch(Mat full_image, Mat * templates){
-	Mat display_image, correlation_image, temp;
-	full_image.copyTo( display_image );
+double templateMatch(Mat full_image, int size ,Mat * templates){
+	int i  = 0, maxIndex = 0;
+	Mat display_image, correlation_image;
 	double min_correlation, max_correlation;
-	int result_columns =  full_image.cols - templates[0].cols + 1;
-	int result_rows = full_image.rows - templates[0].rows + 1;
-	correlation_image.create( result_columns, result_rows, CV_32FC1 );
-	cvtColor(full_image,display_image,CV_RGB2GRAY);
-	cvtColor(templates[0],temp,CV_RGB2GRAY);
-	imshow("image",display_image);
-	imshow("temp",temp);
+	vector<tuple<double,int>> maxCorrelations;
+
+	for(i = 0; i < size; i++){
+		int result_columns =  full_image.cols - templates[0].cols + 1;
+		int result_rows = full_image.rows - templates[0].rows + 1;
+		correlation_image.create( result_columns, result_rows, CV_32FC1 );
+		matchTemplate( full_image, templates[i], correlation_image, CV_TM_CCORR_NORMED );
+		minMaxLoc( correlation_image, &min_correlation, &max_correlation );
+		cout.precision(17);
+		maxCorrelations.push_back(make_tuple(max_correlation,i));
+		
+	}
+
+	max_correlation = 0;
+	maxIndex = 0;
+	for(i = 0 ; i < maxCorrelations.size(); i++){
+		if(max_correlation < std::get<0>(maxCorrelations[i]) ) {
+			maxIndex = i;
+			max_correlation = std::get<0>(maxCorrelations[i]);
+		}
+	}
+
+	display_image = JoinImagesHorizontally(full_image,"Oringinal",templates[maxIndex],"Template");
+	std::cout << image<<": Max Correlation: " << max_correlation <<std::endl;
+
+	imshow("result",display_image);
 	waitKey(0);
-	matchTemplate( display_image, temp, correlation_image, CV_TM_SQDIFF_NORMED );
-	//minMaxLoc( correlation_image, &min_correlation, &max_correlation );
-	//FindLocalMaxima( correlation_image, matched_template_map, max_correlation * 0.99 );
+	image++;
+	return max_correlation;
+	/*FindLocalMaxima( correlation_image, matched_template_map, max_correlation * 0.99 );*/
+
+}
+
+void templateMatchImages(Mat * full_image,int sizeB, int sizeT, Mat * templates){
+	for(int i = 0; i < sizeB; i++)
+		templateMatch(full_image[i],sizeT,templates);
 
 }
 #pragma endregion TEMPLATE MATCHING
@@ -515,10 +539,8 @@ int main(int argc, const char** argv){
 	backProjectionAndThreshold(mask,bookSize,backProjectionImages);
 	drawLocationOfPage(backProjectionImages, mask ,bookSize, whiteDotsLocation);
 	transformSetOfImages(booksMat, whiteDotsLocation, templateCorners,bookSize, transformedImages);
-	Mat test;
-	transformedImages[0].copyTo(test);
     cropImageSet(transformedImages,bookSize,templateCorners,croppedImages);
-	templateMatch(test,pagesMat);
-	displayImages("Found Corners",1,booksMat,mask,backProjectionImages, croppedImages);
+	templateMatchImages(transformedImages,bookSize,pageSize,pagesMat);
+	displayImages("Found Corners",bookSize,booksMat,mask,backProjectionImages, croppedImages);
     return 0;
 }
