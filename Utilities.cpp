@@ -1,6 +1,6 @@
-/*
+ï»¿/*
  * This code is provided as part of "A Practical Introduction to Computer Vision with OpenCV"
- * by Kenneth Dawson-Howe © Wiley & Sons Inc. 2014.  All rights reserved.
+ * by Kenneth Dawson-Howe ï¿½ Wiley & Sons Inc. 2014.  All rights reserved.
  */
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
@@ -312,4 +312,3 @@ Mat ComputeDefaultImage( Mat& passed_image )
 			}
 		}
 	}
-

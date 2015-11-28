@@ -1,6 +1,6 @@
-/*
+ï»¿/*
  * This code is provided as part of "A Practical Introduction to Computer Vision with OpenCV"
- * by Kenneth Dawson-Howe © Wiley & Sons Inc. 2014.  All rights reserved.
+ * by Kenneth Dawson-Howe ï¿½ Wiley & Sons Inc. 2014.  All rights reserved.
  */
 #include "opencv2/core.hpp"
 #include "opencv2/imgproc.hpp"
@@ -9,6 +9,7 @@
 #include "opencv2/highgui.hpp"
 #include <stdio.h>
 #include <iostream>
+
 #define PI 3.14159265358979323846
 
 using namespace std;
