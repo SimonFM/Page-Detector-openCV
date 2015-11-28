@@ -24,10 +24,7 @@ using namespace std;
 using namespace cv;
 #pragma endregion INCLUDES
  
-#pragma region DEFINES
- 
 
-#pragma endregion DEFINES
  
 #pragma region IMAGE LOCATIONS
 // Location of the images in the project
@@ -76,6 +73,7 @@ int groundTruths[] = {0, 1, 2, 3, 4,
 				      4, 3, 6, 8, 7,
 					  6, 10, 12, 11, 1};
 
+#pragma endregion IMAGE LOCATIONS
 
 // True Positive = a page is visible and recognised correctly
 // False Positive = an incorrectly recognised page, where EITHER no page  was visible OR a different page was visible
@@ -93,6 +91,7 @@ void compareAgainstGroundTruth( Mat * images, Mat * templates, int * results, in
 		result[i] = templates[results[i]];
 	}
 
+	// Metrics stuff
 	double precision = ((double) TP) / ((double) (TP+FP));
 	double recall = ((double) TP) / ((double) (TP+FN));
 	double accuracy = ((double) (TP+TN)) / ((double) (TP+FP+TN+FN));
