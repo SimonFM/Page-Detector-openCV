@@ -1,19 +1,8 @@
 #include "opencv2/core.hpp"
 #include "opencv2/highgui.hpp"
 #include <tuple>
-#include "Utilities.h"
+#include "Headers/Utilities.h"
 
-
-// taken from the sample code
-void FindLocalMaxima( Mat& input_image, Mat& local_maxima, double threshold_value ){
-    Mat dilated_input_image,thresholded_input_image,thresholded_input_8bit;
-    dilate(input_image,dilated_input_image,Mat());
-    compare(input_image,dilated_input_image,local_maxima,CMP_EQ);
-    threshold( input_image, thresholded_input_image, threshold_value, 255, THRESH_BINARY );
-    thresholded_input_image.convertTo( thresholded_input_8bit, CV_8U );
-    bitwise_and( local_maxima, thresholded_input_8bit, local_maxima );
-}
-  
 // Modified from the sample code given to us.
 int templateMatch(Mat full_image, int size ,Mat * templates){
     int i  = 0, maxIndex = 0;

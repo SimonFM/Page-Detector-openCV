@@ -3,9 +3,9 @@
 #include <iostream>
 #include <fstream>
 #include <tuple>
-#include "Utilities.h"
-#include "Points.h"
-#include "Operations.h"
+#include "Headers/Utilities.h"
+#include "Headers/Points.h"
+#include "Headers/Operations.h"
 
 // transforms any given image to a given destination.
 void transformImage(Mat imageToTransform,  vector<Point> srcPoints,  vector<Point> dstPoints, Mat &result){
@@ -30,10 +30,8 @@ void transformImage(Mat imageToTransform,  vector<Point> srcPoints,  vector<Poin
 // Apply Transformation to an array of images, given the points and the destinations and store those
 // transformed images in result
 void transformSetOfImages(Mat * imagesToTransform,  vector<Point>* srcPoints,  vector<Point> dstPoints,int size, Mat * &result){
-    for(int i = 0; i < size; i++){
-        transformImage(imagesToTransform[i], srcPoints[i],dstPoints,result[i]);
-    }
- 
+    for(int i = 0; i < size; i++)
+        transformImage(imagesToTransform[i], srcPoints[i],dstPoints,result[i]); 
 }
 
 // A function that finds the top left, top right, bottom left and the bottom

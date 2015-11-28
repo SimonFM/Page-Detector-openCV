@@ -1,19 +1,15 @@
  #include "opencv2/core.hpp"
 #include "opencv2/highgui.hpp"
 #include <iostream>
-#include "Utilities.h"
-#include "ImageFunctions.h"
-#include "Points.h"
-#include "Defines.h"
+#include "Headers/Utilities.h"
+#include "Headers/Defines.h"
 #include "Histograms.cpp"
 
 
 // This back projection code was taken from the openCvExample given to us.
 void backProjectionAndThreshold(Mat * imagesToProcesse, Mat sampleBlue, int size, Mat * &result){
-    Mat hls_image,hls_imageBlue;
-    Mat backProjProb,binary;
+    Mat hls_image,hls_imageBlue, backProjProb,binary;
 	
-
     cvtColor(sampleBlue, hls_imageBlue, CV_BGR2HLS);
     ColourHistogram histogram3D(hls_imageBlue,NUM_OF_BINS);
  
@@ -21,28 +17,31 @@ void backProjectionAndThreshold(Mat * imagesToProcesse, Mat sampleBlue, int size
     for(int i = 0; i < size; i++){
         cvtColor(imagesToProcesse[i], hls_image, CV_BGR2HLS);
         backProjProb = StretchImage( histogram3D.BackProject(hls_image) );
-        threshold(backProjProb, result[i], 15, 255,  CV_THRESH_BINARY );
+        threshold(backProjProb, result[i], 200, 255,  CV_THRESH_BINARY );
     }
+	
 }
  
  
-// gets the Mask of an page so I can only get the page
+// gets the Mask of an page so I can only get the page when it is applied
+// result contains the masked images
 void getAndApplyMask(Mat * images, int size, Mat * &result){
     Mat rgb[3], thresh, erodedImage, dilatedImage;
     Mat mask;
     vector<Mat> channels;
     for(int i = 0 ; i < size ; i++){
         split(images[i],rgb);
-        threshold(rgb[0],thresh, 0, 225,   CV_THRESH_OTSU);
-        // perform an opening
-        erode(thresh,erodedImage,Mat());
-        dilate(erodedImage,mask,Mat());
+        threshold(rgb[0],thresh, 200, 225, CV_THRESH_OTSU);
+        // perform an opening 4 times
+		morphologyEx(thresh, mask, MORPH_OPEN, Mat(), Point(-1,-1),NUMBER_OF);
+
         // mask all the channels
         for(int j = 0 ; j < 3 ; j++){
             Mat temp_1;
             rgb[j].copyTo(temp_1,mask);
             channels.push_back(temp_1);
         }
+		
         // merge all the channels in to the result.
         merge(channels,result[i]);
         channels.clear();

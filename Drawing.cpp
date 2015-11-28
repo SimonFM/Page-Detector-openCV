@@ -1,10 +1,10 @@
 #include "opencv2/core.hpp"
 #include "opencv2/highgui.hpp"
 #include <iostream>
-#include "Utilities.h"
-#include "ImageFunctions.h"
-#include "Points.h"
-#include "Defines.h"
+#include "Headers/Utilities.h"
+#include "Headers/ImageFunctions.h"
+#include "Headers/Points.h"
+#include "Headers/Defines.h"
 
 
 // draws lines on an image for a given list of points.
@@ -47,6 +47,28 @@ void displayImages(string windowName,int size,Mat * original,Mat * masked, Mat *
         display[i] = JoinImagesHorizontally(resizedOriginal[i],"Original Image",resizedMasked[i],"Masked Image",2);
         display[i] = JoinImagesHorizontally(display[i],"",temp,"Back Project & closing Image",2);
         display[i] = JoinImagesHorizontally(display[i],"",resizedMatchedImages[i],"Matched Image",2);
+		// display them
+        imshow(windowName,display[i]);
+        waitKey(0);// wait for user input (Enter pressed)
+    }
+}
+
+// A function that displays an array of given images using the imshow function of opencv
+// Resizes each image so that it would display nicer on my screen, I then show each image passed
+// in to the function
+void displayImages(string windowName,int size,Mat * original, Mat * matchedImages){
+    Mat * display = new Mat[size];
+    Mat * resizedOriginal = new Mat[size];
+    Mat * resizedMatchedImages = new Mat[size];
+ 
+ 
+    Mat temp;
+    resize(original,size, THIRD_SIZE, resizedOriginal);
+    resize(matchedImages,size, HALF_SIZE, resizedMatchedImages);
+ 
+    for(int i = 0 ; i < size; i++){
+		// join them all up
+        display[i] = JoinImagesHorizontally(resizedOriginal[i],"Original",resizedMatchedImages[i],"Matched Image",2);
 		// display them
         imshow(windowName,display[i]);
         waitKey(0);// wait for user input (Enter pressed)

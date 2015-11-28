@@ -3,6 +3,7 @@
  * A program that displays an image to the user by detecting a page inside of
  * a given image. The page has a series of blue dots and lines that indicate that
  * this is the page. It only matched 18 out of 25 in the sample set.
+ * Code can be found on my github too: https://github.com/SimonFM/Page-Detector-openCV/
  */
 #pragma region INCLUDES
  
@@ -11,15 +12,15 @@
 #include <iostream>
 #include <fstream>
 #include <tuple>
-#include "Utilities.h"
+#include "Headers/Utilities.h"
 #include "Histograms.cpp"
-#include "Points.h"
-#include "ImageFunctions.h"
-#include "Drawing.h"
-#include "Operations.h"
-#include "Geometery.h"
-#include "Templates.h"
-#include "Metrics.h"
+#include "Headers/Points.h"
+#include "Headers/ImageFunctions.h"
+#include "Headers/Drawing.h"
+#include "Headers/Operations.h"
+#include "Headers/Geometery.h"
+#include "Headers/Templates.h"
+#include "Headers/Metrics.h"
  
 using namespace std;
 using namespace cv;
@@ -125,6 +126,7 @@ int main(int argc, const char** argv){
 
 	// display the result of the process
 	cout << "Displaying Images..." <<endl;
-	displayImages("Result",bookSize,booksMat,masked,backProjectionImages,matchedImages);
+	//displayImages("Result",bookSize,booksMat,masked,backProjectionImages,matchedImages);
+	displayImages("Result",bookSize,booksMat,matchedImages);
 	return 0;
 }

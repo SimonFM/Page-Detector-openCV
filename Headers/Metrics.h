@@ -1,6 +1,5 @@
 #include "opencv2/core.hpp"
 #include "opencv2/highgui.hpp"
-#include "Utilities.h"
 
 // True Positive = a page is visible and recognised correctly
 // False Positive = an incorrectly recognised page, where EITHER no page  was visible OR a different page was visible
