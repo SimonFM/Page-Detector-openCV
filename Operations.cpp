@@ -56,3 +56,15 @@ void getRedChannels(Mat * input, int size, Mat * &redChannel){
         redChannel[i] = channels[0];
     }
 }
+
+
+// applies canny to an array of images
+void applyCanny(Mat * input, int size, Mat * output){
+	Mat grayedImage, cannyImage;
+	for(int i = 0; i < size; i++){
+		cvtColor(input[i], grayedImage, CV_BGR2GRAY);
+		Canny( grayedImage, cannyImage, 15, 255, 3);
+		cannyImage.convertTo(output[i], CV_8U);
+	}
+	
+}

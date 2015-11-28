@@ -10,3 +10,6 @@ void getAndApplyMask(Mat * images, int size, Mat * &result);
   
 // returns an array of all the red channels
 void getRedChannels(Mat * input, int size, Mat * &redChannel);
+
+// applies canny to a single image
+void applyCanny(Mat * input, int size, Mat * output);

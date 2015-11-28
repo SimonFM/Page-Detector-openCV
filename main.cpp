@@ -90,6 +90,9 @@ int main(int argc, const char** argv){
 	Mat * closing = new Mat[bookSize];
 	Mat * backProjected = new Mat[bookSize];
 	Mat * croppedImages = new Mat[bookSize];
+	Mat * cannyImages = new Mat[bookSize];
+	Mat * cannyImagesTemplates = new Mat[bookSize];
+
  
 	Mat * pagesMat = new Mat[pageSize];
 	int * results = new int[bookSize];
@@ -118,8 +121,13 @@ int main(int argc, const char** argv){
 	drawLocationOfPage(backProjectionImages, masked ,bookSize, whiteDotsLocation);
 	cout << "Transforming Images..." <<endl;
 	transformSetOfImages(booksMat, whiteDotsLocation, templateCorners,bookSize, transformedImages);
+
+	cout << "Doing some Canny Edge Detection..." <<endl;
+
+	applyCanny(transformedImages,bookSize,cannyImages);
+	applyCanny(pagesMat,pageSize,cannyImagesTemplates);
 	cout << "Doing some Template Matching..." <<endl;
-	templateMatchImages(transformedImages,bookSize,pageSize,pagesMat,results);
+	templateMatchImages(cannyImages,bookSize,pageSize,cannyImagesTemplates,results);
 
 	cout << "Generating Metrics..." <<endl;
 	compareAgainstGroundTruth(transformedImages,pagesMat,results,bookSize,matchedImages);
